@@ -1,0 +1,101 @@
+/*
+  Blink
+
+  Turns an LED on for one second, then off for one second, repeatedly.
+
+  Most Arduinos have an on-board LED you can control. On the UNO, MEGA and ZERO
+  it is attached to digital pin 13, on MKR1000 on pin 6. LED_BUILTIN is set to
+  the correct LED pin independent of which board is used.
+  If you want to know what pin the on-board LED is connected to on your Arduino
+  model, check the Technical Specs of your board at:
+  https://www.arduino.cc/en/Main/Products
+
+  modified 8 May 2014
+  by Scott Fitzgerald
+  modified 2 Sep 2016
+  by Arturo Guadalupi
+  modified 8 Sep 2016
+  by Colby Newman
+
+  This example code is in the public domain.
+
+  https://www.arduino.cc/en/Tutorial/BuiltInExamples/Blink
+*/
+
+#include <VL53L0X.h>
+VL53L0X sensor;
+
+
+// the setup function runs once when you press reset or power the board
+
+const int MIN_VIBE = 0;
+const int MAX_VIBE = 254;
+
+const int MIN_DIST = 30;
+const int NEAR_BOUND = 400;
+const int MID_BOUND = 700;
+const int FAR_BOUND = 1000;
+const int MAX_DIST = 5000;
+
+const int VIBES[] = {9, 10, 11, 3, 5, 6};
+const int numVibes = 6;
+int numVibing = 0;
+
+
+int vibeness = 255;    // how vibey the vibe vibes
+int vibe_delay = 30;
+int current_dist = 10000; //default to above max
+void setup() {
+  Serial.begin(9600);
+  Wire.begin();
+
+  sensor.setTimeout(500);
+
+  if (!sensor.init())
+  {
+    Serial.println("Failed to detect and initialize sensor!");
+    while (1) {}
+  }
+
+  for (int i = 0; i < numVibes; i++) {
+    pinMode(VIBES[i], OUTPUT);
+  }
+
+}
+
+// the loop function runs over and over again forever
+void loop() {
+  int distance_reading = sensor.readRangeSingleMillimeters();
+
+  if (sensor.timeoutOccurred()) {
+    Serial.print(" TIMEOUT");
+  }
+
+  Serial.print("dist: ");
+  Serial.print(distance_reading);
+
+  // we're getting valid readings
+  if ((distance_reading > MIN_DIST) && (distance_reading < MAX_DIST)) {
+    if (distance_reading <= NEAR_BOUND) {
+      vibe_delay = 100;
+    } else if (distance_reading <= MID_BOUND) {
+      vibe_delay = 500;
+    } else if (distance_reading <=  FAR_BOUND) {
+      vibe_delay = 1000;
+    }
+
+    int chosen_vibe_index = random(0, numVibes);
+
+    analogWrite(VIBES[chosen_vibe_index], vibeness);
+    delay(500);
+    analogWrite(VIBES[chosen_vibe_index], 0);
+    delay(vibe_delay);
+    
+    Serial.print(" delay: ");
+    Serial.println(vibe_delay);
+  }
+
+
+
+  delay(50);
+}
